@@ -1,0 +1,12 @@
+# Ignore all build directories
+**/build/
+
+# Ignore compiled binaries
+*.bin
+*.elf
+*.map
+*.hex
+
+# Ignore system files
+.DS_Store
+Thumbs.db
