@@ -9,6 +9,9 @@ A collection of custom firmare to explore aspects of the DaisyPod.
     - Low Pass Filtering through Potentiometer 2
     - Octave Shifting through buttons 1 & 2
     - Click to centre oscillator on 440 Hz (encoder)
+- ** 02_SubtractiveSynch
+    - ADSR style subtractive synthesis - East Coast style
+    
 
 ## Build Instructions
 1. Clone repo
