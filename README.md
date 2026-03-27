@@ -3,14 +3,15 @@
 A collection of custom firmare to explore aspects of the DaisyPod.
 
 ## Projects
-- ** 01_SawOcillator **: A sawtooth oscillator featuring:
+- **01_SawOcillator**: A sawtooth oscillator featuring:
     - Frequency control through the Daisy Pod main encoder
     - White noise mixing through Potentiometer 1
     - Low Pass Filtering through Potentiometer 2
     - Octave Shifting through buttons 1 & 2
     - Click to centre oscillator on 440 Hz (encoder)
-- ** 02_SubtractiveSynch
+- **02_SubtractiveSynth**
     - ADSR style subtractive synthesis - East Coast style
+    - State variable filter to add low pass filtering
     
 
 ## Build Instructions
