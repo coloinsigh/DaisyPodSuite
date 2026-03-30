@@ -14,14 +14,6 @@ Adsr env;  // Envelope generator
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size){
 
     bool gate = hw.button1.Pressed();
-
-    // Filter cutoff from knob1, scaled between [20, 10k] Hz
-    float cutoff = 20.0f +  (hw.knob1.Process() * 9980.0f)
-    filt.SetFreq(cutoff)
-
-    // Resosnance from knob 2, in range [0.0, 1.0]
-    float res = hw.knob2.Process()
-    filt.SetRes(res)
     
     for (size_t i = 0; i < size; i++){
 
@@ -53,6 +45,7 @@ int main(void){
 
     osc.Init(sample_rate);
     osc.SetWaveform(Oscillator::WAVE_SAW);
+    osc.SetFreq(440.0f);
 
     filt.Init(sample_rate); // Voltage Controlled Filter
     env.Init(sample_rate); // Envelope generator
@@ -63,17 +56,20 @@ int main(void){
     env.SetSustainLevel(0.3f);
     env.SetReleaseTime(0.5f);
 
-
-
     hw.StartAudio(AudioCallback);
 
     while(1) {
         hw.ProcessDigitalControls();
 
-        // Set cutoff of filter
-        float cutoff = 20.0f + (hw.knob1.Process() * 19980.0f);
+        // Filter cutoff from knob1, scaled between [20, 10k] Hz
+        float cutoff = 20.0f +  (hw.knob1.Process() * 9980.0f);
         filt.SetFreq(cutoff);
+
+        // Resosnance from knob 2, in range [0.0, 1.0]
+        float res = hw.knob2.Process();
+        filt.SetRes(res);
         
+        System::Delay(1); // Small delay to prevent overwhelming board
     }
 
 }
