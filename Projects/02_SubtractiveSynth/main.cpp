@@ -20,6 +20,7 @@ float scales[2][8] = {
 
 int current_scale = 0;
 int note_index = 0;
+bool sub_enabled = true;
 
 
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size){
@@ -32,8 +33,14 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
         
         // Evaluete the oscillator value
         float osc_val = osc.Process();
-        float osc_sub_val = osc_sub.Process();
-        float osc_mixed = (osc_val + osc_sub_val) * 0.5f;
+
+        float osc_mixed;
+        if (sub_enabled){
+            float osc_sub_val = osc_sub.Process();
+            osc_mixed = (osc_val + osc_sub_val) * 0.5f;
+        } else {
+            osc_mixed = osc_val;
+        }
 
         // Filter oscillator output
         filt.Process(osc_mixed);
@@ -63,7 +70,8 @@ int main(void){
 
     // Define bass oscillator
     osc_sub.Init(sample_rate);
-    osc_sub.SetWaveform(Oscillator::WAVE_SAW);
+    osc_sub.SetWaveform(Oscillator::WAVE_SQUARE);
+    osc_sub.SetAmp(0.5f);
     osc_sub.SetFreq(440.0f / 2.0f);
 
     filt.Init(sample_rate); // Voltage Controlled Filter
@@ -88,6 +96,11 @@ int main(void){
         // Check for scale change with button 2
         if (hw.button2.RisingEdge()){
             current_scale = !current_scale;
+        }
+
+        // Poll encoder click to enable/disable sub
+        if (hw.encoder.RisingEdge()){
+            sub_enabled = !sub_enabled;
         }
 
         float midi_note = scales[current_scale][note_index];
