@@ -8,8 +8,20 @@ using namespace daisysp;
 // Define hardware
 DaisyPod hw;
 Oscillator osc;
+Oscillator osc_sub;
 Svf filt;  // State variable filter 
 Adsr env;  // Envelope generator
+
+// Define scales and indexes for keeping track of notes
+float scales[2][8] = {
+    {60, 62, 64, 65, 67, 69, 71, 72},  // C major
+    {60, 62, 63, 65, 67, 68, 70, 72},  // C minor
+};
+
+int current_scale = 0;
+int note_index = 0;
+bool sub_enabled = true;
+
 
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size){
 
@@ -22,8 +34,16 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
         // Evaluete the oscillator value
         float osc_val = osc.Process();
 
+        float osc_mixed;
+        if (sub_enabled){
+            float osc_sub_val = osc_sub.Process();
+            osc_mixed = (osc_val + osc_sub_val) * 0.5f;
+        } else {
+            osc_mixed = osc_val;
+        }
+
         // Filter oscillator output
-        filt.Process(osc_val);
+        filt.Process(osc_mixed);
         float osc_filt = filt.Low();
 
         // Combine oscillator and envelope
@@ -43,9 +63,16 @@ int main(void){
 
     hw.StartAdc();
 
+    // Define soprano oscillator
     osc.Init(sample_rate);
     osc.SetWaveform(Oscillator::WAVE_SAW);
     osc.SetFreq(440.0f);
+
+    // Define bass oscillator
+    osc_sub.Init(sample_rate);
+    osc_sub.SetWaveform(Oscillator::WAVE_SQUARE);
+    osc_sub.SetAmp(0.5f);
+    osc_sub.SetFreq(440.0f / 2.0f);
 
     filt.Init(sample_rate); // Voltage Controlled Filter
     env.Init(sample_rate); // Envelope generator
@@ -60,6 +87,36 @@ int main(void){
 
     while(1) {
         hw.ProcessDigitalControls();
+
+        // Find encoder increments
+        int inc = hw.encoder.Increment();
+        note_index += inc;
+        note_index = std::clamp(note_index, 0, 7);
+
+        // Check for scale change with button 2
+        if (hw.button2.RisingEdge()){
+            current_scale = !current_scale;
+        }
+
+        // Poll encoder click to enable/disable sub
+        if (hw.encoder.RisingEdge()){
+            sub_enabled = !sub_enabled;
+        }
+
+        float midi_note = scales[current_scale][note_index];
+
+        // Set LED status based on current scale
+        if (current_scale){
+            hw.led1.Set(1.0f, 1.0f, 1.0f);
+            hw.led2.Set(0.0f, 0.0f, 0.0f);
+        } else {
+            hw.led1.Set(0.0f, 0.0f, 0.0f);
+            hw.led2.Set(1.0f, 1.0f, 1.0f);
+        }
+        hw.UpdateLeds();
+
+        osc.SetFreq(mtof(midi_note));
+        osc_sub.SetFreq(mtof(midi_note) / 2.0f);
 
         // Filter cutoff from knob1, scaled between [20, 10k] Hz
         float cutoff = 20.0f +  (hw.knob1.Process() * 9980.0f);
