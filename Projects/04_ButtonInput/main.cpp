@@ -9,12 +9,44 @@ using namespace daisysp;
 // Define the hardware interface
 DaisyPod hw;
 
+// Define oscillator
+Oscillator osc;
+AdEnv env;
+
+float target_freq = 261.63f;
+
 // Create the I2C object globally
 I2CHandle i2c_bus;
 
+
+void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size){
+    for (size_t i = 0; i < size; i++){
+        osc.SetFreq(target_freq);
+
+        float synth_signal = osc.Process() * env.Process();
+
+        out[0][i] = synth_signal;
+        out[1][i] = synth_signal;
+    }
+}
+
 int main(void) {
     hw.Init();
-    hw.seed.StartLog(true); // Start our trusty logger
+    hw.seed.StartLog(true); // Start logger
+
+    // Initialize oscillator
+    float sample_rate = hw.AudioSampleRate();
+    osc.Init(sample_rate);
+    osc.SetWaveform(Oscillator::WAVE_TRI); 
+    osc.SetFreq(target_freq);
+    osc.SetAmp(0.5f);
+
+    // Volumn envelope
+    env.Init(sample_rate);
+    env.SetTime(ADENV_SEG_ATTACK, 0.05f);   // attack
+    env.SetTime(ADENV_SEG_DECAY, 0.4f);     // decay
+    env.SetMax(1.0f);                       // max volume
+    hw.StartAudio(AudioCallback);
 
     // 1. Create a configuration structure for I2C
     I2CHandle::Config i2c_config;
@@ -35,7 +67,11 @@ int main(void) {
     buffer[0] = 0x00;
     buffer[1] = 0xFF;
 
+    hw.seed.PrintLine("Logging 1");
+
     I2CHandle::Result result = i2c_bus.TransmitBlocking(0x20, buffer, 2, 10);
+
+    hw.seed.PrintLine("Logging 2");
 
     if (result == I2CHandle::Result::OK) {
         hw.seed.PrintLine("True");
@@ -43,6 +79,8 @@ int main(void) {
     else {
         hw.seed.PrintLine("False");
     }
+
+    hw.seed.PrintLine("Logging 3");
 
     // Pull up 
     uint8_t pullup_buffer[2];
@@ -83,10 +121,23 @@ int main(void) {
             bool btn2_pressed = ((port_state & 0x02) == 0);
             bool btn3_pressed = ((port_state & 0x04) == 0);
 
+            if (btn1_pressed) {
+                target_freq = 261.63f;
+                env.Trigger();
+            }
+            if (btn2_pressed) {
+                target_freq = 329.63f;
+                env.Trigger();
+            }
+            if (btn3_pressed) {
+                target_freq = 392.00f;
+                env.Trigger();
+            }
+
             // Print out state of each button
             hw.seed.PrintLine("B1: %d | B2: %d | B3: %d", (int)btn1_pressed, (int)btn2_pressed, (int)btn3_pressed);
         }
     
-        System::Delay(100);
+        System::Delay(10);
     }
 }
