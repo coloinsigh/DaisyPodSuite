@@ -9,14 +9,14 @@ using namespace daisysp;
 // Define the hardware interface
 DaisyPod hw;
 
+// Create the I2C object globally
+I2CHandle i2c_bus;
+
 // Define oscillator
 Oscillator osc;
 AdEnv env;
 
 float target_freq = 261.63f;
-
-// Create the I2C object globally
-I2CHandle i2c_bus;
 
 
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size){
@@ -30,6 +30,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
     }
 }
 
+
 int main(void) {
     hw.Init();
     hw.seed.StartLog(true); // Start logger
@@ -41,11 +42,13 @@ int main(void) {
     osc.SetFreq(target_freq);
     osc.SetAmp(0.5f);
 
-    // Volumn envelope
+    // Volume envelope
     env.Init(sample_rate);
     env.SetTime(ADENV_SEG_ATTACK, 0.05f);   // attack
     env.SetTime(ADENV_SEG_DECAY, 0.4f);     // decay
     env.SetMax(1.0f);                       // max volume
+
+    // Start Audio
     hw.StartAudio(AudioCallback);
 
     // 1. Create a configuration structure for I2C
@@ -55,6 +58,8 @@ int main(void) {
     i2c_config.periph = I2CHandle::Config::Peripheral::I2C_1; 
     i2c_config.speed  = I2CHandle::Config::Speed::I2C_400KHZ;
     
+    i2c_config.mode   = I2CHandle::Config::Mode::I2C_MASTER;
+
     i2c_config.pin_config.scl = seed::D11;
     i2c_config.pin_config.sda = seed::D12;
 
@@ -95,11 +100,10 @@ int main(void) {
         hw.seed.PrintLine("Failed to activate pull-ups.");
     }
 
-
     while(1) {
         hw.ProcessDigitalControls();
 
-        uint8_t reg_to_read = 0x12; // GPIOA register to read
+        uint16_t reg_to_read = 0x12; // GPIOA register to read
         uint8_t port_state = 0xFF; // Variable to hold the byte returned
 
         // Send 0x12, then read 1 byte back into port_state
@@ -135,7 +139,7 @@ int main(void) {
             }
 
             // Print out state of each button
-            hw.seed.PrintLine("B1: %d | B2: %d | B3: %d", (int)btn1_pressed, (int)btn2_pressed, (int)btn3_pressed);
+            // hw.seed.PrintLine("B1: %d | B2: %d | B3: %d", (int)btn1_pressed, (int)btn2_pressed, (int)btn3_pressed);
         }
     
         System::Delay(10);
