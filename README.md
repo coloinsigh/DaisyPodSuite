@@ -26,3 +26,6 @@ A collection of custom firmare to explore aspects of the DaisyPod.
 3. Build: `make`
 4. Flash: `make program-dfu`
 
+
+## Useful extras
+Where appropriate, `hw.seed.PrintLine` commands are used for serial monitoring over USB. When used, a useful way to view the serial monitor is with `screen` on Ubuntu or macOS. On Windows, PuTTY is a good alternative. 
