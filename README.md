@@ -12,7 +12,7 @@ A collection of custom firmare to explore aspects of the DaisyPod.
 - **02_SubtractiveSynth**
     - ADSR style subtractive synthesis - East Coast style
     - State variable filter to add low pass filtering
-  **04_ButtonInput**
+- **04_ButtonInput**
     - Add support for external button input
     - Three buttons incorporated on pins A1, A2, A3 of a HW-839 breakout board
     - Monophonic synth engine tuned to a single triad as a MVP
