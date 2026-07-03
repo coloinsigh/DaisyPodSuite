@@ -35,16 +35,18 @@ const float SCALE_LUT[NUM_VOICES] = {
 
 
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size){
+    float synth_signal_global = 0;
     for (size_t i = 0; i < size; i++){
-
-        for (int x = 0; x < NUM_VOICES; x++){
-            voice_pool[x].osc.SetFreq(target_freq);
-
-            float synth_signal = voice_pool[x].osc.Process() * voice_pool[x].env.Process();
         
-            out[0][i] = synth_signal;
-            out[1][i] = synth_signal;
+        // Reset global synth output at every iteration
+        synth_signal_global = 0;
+        for (int x = 0; x < NUM_VOICES; x++){
+            // Combine each voice into the global output
+            float synth_signal = voice_pool[x].osc.Process() * voice_pool[x].env.Process();
+            synth_signal_global += synth_signal;
         }
+        out[0][i] = synth_signal_global;
+        out[1][i] = synth_signal_global;
     }
 }
 
@@ -66,5 +68,8 @@ int main(void) {
         voice_pool[x].env.SetTime(ADENV_SEG_ATTACK, 0.05f); // attack
         voice_pool[x].env.SetTime(ADENV_SEG_DECAY, 0.4f);   // decay
         voice_pool[x].env.SetMax(1.0f);                     // max volume
+
+        keys_a_pressed = ((port_a >> x) & 1) == 0;
+        keys_b_pressed = ((port_b >> x) & 1) == 0;
     }
 }
