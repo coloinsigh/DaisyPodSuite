@@ -54,6 +54,11 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
 int main(void) {
     hw.Init();
 
+    // Define buttons
+    uint8_t port_a = 0xFF;
+    uint8_t port_b = 0xFF;
+
+    bool note_pressed[NUM_VOICES];
 
     // Initializae oscillator
     float sample_rate = hw.AudioSampleRate();
@@ -68,8 +73,24 @@ int main(void) {
         voice_pool[x].env.SetTime(ADENV_SEG_ATTACK, 0.05f); // attack
         voice_pool[x].env.SetTime(ADENV_SEG_DECAY, 0.4f);   // decay
         voice_pool[x].env.SetMax(1.0f);                     // max volume
+    }
 
-        keys_a_pressed = ((port_a >> x) & 1) == 0;
-        keys_b_pressed = ((port_b >> x) & 1) == 0;
+    while(1){
+        for (int x=0; x < NUM_VOICES; x++){
+            bool keys_a_pressed = ((port_a >> x) & 1) == 0;
+            bool keys_b_pressed = ((port_b >> x) & 1) == 0;
+
+            bool note_is_active = keys_a_pressed || keys_b_pressed;
+
+            // Check if a button is newly pressed
+            if (note_is_active && !note_pressed[x]){
+                // Trigger note
+                voice_pool[x].env.Trigger();
+                note_pressed[x] = true;
+            }
+            else if (!note_is_active && note_pressed[x]){
+                note_pressed[x] = false;
+            }
+        }
     }
 }
