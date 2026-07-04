@@ -10,7 +10,6 @@ constexpr int NUM_VOICES = 8;
 
 // Initialize objects
 DaisyPod hw;
-I2CHandle i2c;
 I2CHandle i2c_bus;
 
 struct Voice {
@@ -19,8 +18,6 @@ struct Voice {
     bool is_active;
 };
 Voice voice_pool[NUM_VOICES];
-
-float target_freq = 440.0;
 
 // Define a LUT containing 8 notes in C
 const float SCALE_LUT[NUM_VOICES] = {
@@ -46,6 +43,10 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
             float synth_signal = voice_pool[x].osc.Process() * voice_pool[x].env.Process();
             synth_signal_global += synth_signal;
         }
+
+        // Ensure output signal never oversaturates
+        synth_signal_global = std::clamp(synth_signal_global, -1.0f, 1.0f);
+
         out[0][i] = synth_signal_global;
         out[1][i] = synth_signal_global;
     }
@@ -55,11 +56,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
 int main(void) {
     hw.Init();
 
-    // Define buttons
-    uint8_t port_a = 0xFF;
-    uint8_t port_b = 0xFF;
-
-    bool note_pressed[NUM_VOICES];
+    bool note_pressed[NUM_VOICES] = {false};
 
     // Initializae oscillator
     float sample_rate = hw.AudioSampleRate();
@@ -68,6 +65,7 @@ int main(void) {
         voice_pool[x].osc.Init(sample_rate);
         voice_pool[x].osc.SetWaveform(Oscillator::WAVE_TRI);
         voice_pool[x].osc.SetFreq(SCALE_LUT[x]);
+        voice_pool[x].osc.SetAmp(0.15f);    // Reduce chance of saturation
 
         // Initialize envelope for each button
         voice_pool[x].env.Init(sample_rate);
@@ -99,7 +97,31 @@ int main(void) {
         i2c_bus.TransmitBlocking(mcp_addr, tx_data, 2, 10);
     }
 
+    // Start audio
+    hw.StartAudio(AudioCallback);
+
     while(1){
+        hw.ProcessDigitalControls();
+
+        // Handle button pressing logic
+        uint16_t reg_to_read = 0x12;  // GPIOA
+        uint8_t port_data[2] = {0xFF, 0xFF};  // Initialize port outputs
+
+        // Utilitze DaisySeed's automatic address pointer incrementing - start reading from
+        // 0x12 and read 2 bytes 
+        I2CHandle::Result read_result = i2c_bus.ReadDataAtAddress(
+            0x20,           // Device addres
+            reg_to_read,    // register to read
+            1,              // size of register
+            port_data,      // result storage
+            2,              // number of bytes to read
+            10              // timeout in ms
+        );
+
+        // Now parse data into useful variables
+        uint8_t port_a = port_data[0];
+        uint8_t port_b = port_data[1];
+        
         for (int x=0; x < NUM_VOICES; x++){
             bool keys_a_pressed = ((port_a >> x) & 1) == 0;
             bool keys_b_pressed = ((port_b >> x) & 1) == 0;
