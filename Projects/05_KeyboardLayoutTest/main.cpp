@@ -11,6 +11,7 @@ constexpr int NUM_VOICES = 8;
 // Initialize objects
 DaisyPod hw;
 I2CHandle i2c;
+I2CHandle i2c_bus;
 
 struct Voice {
     Oscillator osc;
@@ -75,11 +76,35 @@ int main(void) {
         voice_pool[x].env.SetMax(1.0f);                     // max volume
     }
 
+    // Handle I2C peripherals for polling button press
+    I2CHandle::Config i2c_config;
+    i2c_config.periph = I2CHandle::Config::Peripheral::I2C_1; 
+    i2c_config.speed  = I2CHandle::Config::Speed::I2C_400KHZ;
+    
+    i2c_config.mode   = I2CHandle::Config::Mode::I2C_MASTER;
+
+    i2c_config.pin_config.scl = seed::D11;
+    i2c_config.pin_config.sda = seed::D12;
+    
+    i2c_bus.Init(i2c_config);
+
+    // Set up internal registers for I2C interaction
+    uint8_t mcp_addr = 0x20;
+    uint8_t tx_data[2];
+    uint8_t registers[4] = {0x00, 0x01, 0x0C, 0x0D}; 
+
+    for (int i = 0; i < 4; i++) {
+        tx_data[0] = registers[i];
+        tx_data[1] = 0xFF;
+        i2c_bus.TransmitBlocking(mcp_addr, tx_data, 2, 10);
+    }
+
     while(1){
         for (int x=0; x < NUM_VOICES; x++){
             bool keys_a_pressed = ((port_a >> x) & 1) == 0;
             bool keys_b_pressed = ((port_b >> x) & 1) == 0;
 
+            // Prevent both keyboards from playing the same note simultaneously
             bool note_is_active = keys_a_pressed || keys_b_pressed;
 
             // Check if a button is newly pressed
@@ -89,6 +114,7 @@ int main(void) {
                 note_pressed[x] = true;
             }
             else if (!note_is_active && note_pressed[x]){
+                // Note has been released - trust AdEnv::Trigger() to handle fade out
                 note_pressed[x] = false;
             }
         }
