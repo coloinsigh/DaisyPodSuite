@@ -17,6 +17,11 @@ A collection of custom firmare to explore aspects of the DaisyPod.
     - Three buttons incorporated on pins A1, A2, A3 of a HW-839 breakout board
     - Monophonic synth engine tuned to a single triad as a MVP
     - Barebones envelope
+- **05_KeyboardLayoutTest
+    - Digital hardware synth with two 8 button keyboards
+    - Keyboards are intended as a prototype for specific layouts
+    - Each keyboard is addressed through separate addresses on I2C; GPIOA or GPIOB
+    - Polyphony is supported but the same note played by both keyboards is intentionally disabled
     
 
 ## Build Instructions
