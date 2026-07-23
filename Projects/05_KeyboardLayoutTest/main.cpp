@@ -7,6 +7,7 @@ using namespace daisy;
 using namespace daisysp;
 
 constexpr int NUM_VOICES = 8;
+constexpr uint8_t DEBOUNCE_DELAY_MS = 5; 
 
 // Initialize objects
 DaisyPod hw;
@@ -56,7 +57,11 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
 int main(void) {
     hw.Init();
 
+    // Initialize an array to hold the status of button press per voice, along with debouncing arrays
     bool note_pressed[NUM_VOICES] = {false};
+    uint32_t last_bounce_time[NUM_VOICES] = {0};
+    bool current_state[NUM_VOICES] = {false};
+ 
 
     // Initializae oscillator
     float sample_rate = hw.AudioSampleRate();
@@ -121,21 +126,32 @@ int main(void) {
         // Now parse data into useful variables
         uint8_t port_a = port_data[0];
         uint8_t port_b = port_data[1];
+
+        // Debouncing prevents multiple key presses registering for a single button press
+        // Non-blocking debouncing is implemented below, where additional key presses aren't 
+        // blocked by listening and checking for note status.
+        // Get current time for debouncing and initialize variables
+        uint32_t now = System::GetNow();
         
         for (int x=0; x < NUM_VOICES; x++){
             bool keys_a_pressed = ((port_a >> x) & 1) == 0;
             bool keys_b_pressed = ((port_b >> x) & 1) == 0;
 
-            // Prevent both keyboards from playing the same note simultaneously
+            // Prevent both keyboards from playing the same note simultaneously while handling debouncing
             bool note_is_active = keys_a_pressed || keys_b_pressed;
 
+            if ((note_is_active != current_state[x]) && (now - last_bounce_time[x] > DEBOUNCE_DELAY_MS)) {
+                current_state[x] = note_is_active;
+                last_bounce_time[x] = now;
+            }
+
             // Check if a button is newly pressed
-            if (note_is_active && !note_pressed[x]){
+            if (current_state[x] && !note_pressed[x]){
                 // Trigger note
                 voice_pool[x].env.Trigger();
                 note_pressed[x] = true;
             }
-            else if (!note_is_active && note_pressed[x]){
+            else if (!current_state[x] && note_pressed[x]){
                 // Note has been released - trust AdEnv::Trigger() to handle fade out
                 note_pressed[x] = false;
             }
