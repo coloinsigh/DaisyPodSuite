@@ -22,6 +22,7 @@ A collection of custom firmare to explore aspects of the DaisyPod.
     - Keyboards are intended as a prototype for specific layouts
     - Each keyboard is addressed through separate addresses on I2C; GPIOA or GPIOB
     - Polyphony is supported but the same note played by both keyboards is intentionally disabled
+    - Non-blocking button debouncing; avoids ghost triggers and multiple notes being played. Debounce threshold is > 5ms
     
 
 ## Build Instructions
