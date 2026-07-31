@@ -48,12 +48,10 @@ This repository serves as the core embedded framework and physical prototyping t
     - Delay and polyphony
     - Physical keyboard spacing to optimize for ergonomincs and reduce fatigue during play
 
-
 <div align="center">
-  <video src="Docs/Images/board_demo.mp4" autoplay loop muted playsinline width="100%" style="max-width: 650px;"></video>
+  <video src="https://github.com/user-attachments/assets/a3b9aef2-0aa5-4f4b-9b0c-ae6339c6c0ca" autoplay loop muted playsinline width="100%" style="max-width: 650px;"></video> 
   <p><i>Oscilloscope output visualizing real-time waveform generation on the Daisy Pod</i></p>
 </div>
-
 
 ## Examples
 - **01_SawOcillator**: A sawtooth oscillator featuring:
