@@ -4,7 +4,14 @@ A low-latency, multi-voice polyphonic digital synthesizer engine built on the **
 
 This repository serves as the core embedded framework and physical prototyping testbed for a future custom hardware instrument. It focuses on testing physical button matrix layouts and spacing, evaluating hardware I/O expansion via I2C, and optimizing real-time audio callback performance.
 
----
+
+<p align="center">
+  <img src="Docs/Images/board-assembled.jpg" alt="Assembled Hardware Prototype" stype="max-width: 650px; width=100%; height=auto;"/>
+  <br>
+  <sub><em>Assembled v1.0 prototype featuring the Daisy Seed headers with the MCP23017 expansion and two variants of keyboard layouts.</em></sub>
+</p>
+
+
 
 # Key Technical Highlights
 
@@ -14,7 +21,7 @@ This repository serves as the core embedded framework and physical prototyping t
 * **Thread-Safe Architecture:** Strict separation between high-priority real-time audio callbacks (audio interrupt thread) and background hardware polling loops (main thread).
 * **Headroom & Saturation Management:** Dynamic voice amplitude scaling and output clamping to prevent digital DAC clipping during dense polyphonic chords.
 
----
+
 
 # Repository Structure
 ```text
@@ -34,7 +41,12 @@ This repository serves as the core embedded framework and physical prototyping t
     └── 04_ButtonInput/
 ```
 
----
+## Hardware Versions
+**v1.0**
+- Initial prototype to chiefly test:
+    - I2C breakout across multiple buttons
+    - Delay and polyphony
+    - Physical keyboard spacing to optimize for ergonomincs and reduce fatigue during play
 
 ## Examples
 - **01_SawOcillator**: A sawtooth oscillator featuring:
@@ -58,7 +70,7 @@ This repository serves as the core embedded framework and physical prototyping t
     - Polyphony is supported but the same note played by both keyboards is intentionally disabled
     - Non-blocking button debouncing; avoids ghost triggers and multiple notes being played. Debounce threshold is > 5ms
 
----    
+
 
 ## Build Instructions
 1. Clone repo
@@ -69,7 +81,14 @@ This repository serves as the core embedded framework and physical prototyping t
 4. Enter boot mode on Daisy Pod (press and hold boot button > press reset button > release boot button )
 5. Flash to the Daisy Seed vis USB DFU: `make program-dfu`
 
----
+
 
 ## Useful extras
 Where appropriate, `hw.seed.PrintLine` commands are used for serial monitoring over USB. When used, a useful way to view the serial monitor is with `screen` on Ubuntu or macOS. On Windows, PuTTY is a good alternative.
+
+
+
+## License
+
+This project is licensed under [CC BY-NC 4.0](LICENSE). 
+Free for personal, educational, and non-commercial use. For commercial licensing inquiries, please contact the repository owner.
